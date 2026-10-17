@@ -1,0 +1,88 @@
+<?php
+
+namespace App\Http\Controllers\Admin\Question;
+
+use App\Http\Controllers\Controller;
+use App\Models\Question;
+use Illuminate\Http\Request;
+
+class QuestionController extends Controller
+{
+
+    public function index()
+    {
+        $questions = Question::paginate(10);
+        return view('admin.questions.index', compact('questions'));
+    }
+
+    public function create()
+    {
+        return view('admin.questions.create', [
+            'answers' => $this->getAnswers()
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'male_question' => 'required',
+            'female_question' => 'required',
+            'correct_answers' => 'required|array',
+            'show_importance_checkbox_for' => 'required|in:male,female,both,none',
+        ]);
+        $wrongAnswers = array_diff($this->getAnswers(), $request->correct_answers);
+        Question::create([
+            'male_question' => $request->male_question,
+            'female_question' => $request->female_question,
+            'wrong_answers' => array_values($wrongAnswers),
+            'show_importance_checkbox_for' => $request->show_importance_checkbox_for
+        ]);
+        return redirect()->route('admin.questions.index');
+    }
+
+    public function edit($id)
+    {
+        $question = Question::findOrFail($id);
+        return view('admin.questions.edit', [
+            'question' => $question,
+            'answers' => $this->getAnswers()
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'male_question' => 'required',
+            'female_question' => 'required',
+            'correct_answers' => 'required|array',
+            'show_importance_checkbox_for' => 'required|in:male,female,both,none',
+        ]);
+        $wrongAnswers = array_diff($this->getAnswers(), $request->correct_answers);
+        $question = Question::findOrFail($id);
+        $question->update([
+            'male_question' => $request->male_question,
+            'female_question' => $request->female_question,
+            'wrong_answers' => array_values($wrongAnswers),
+            'show_importance_checkbox_for' => $request->show_importance_checkbox_for
+        ]);
+        return redirect()->route('admin.questions.index');
+    }
+
+    public function destroy($id)
+    {
+        $question = Question::findOrFail($id);
+        $question->delete();
+        return redirect()->route('admin.questions.index');
+    }
+
+
+    private function getAnswers(): array
+    {
+        return [
+            'نعم / نعم' => '11',
+            'لا / نعم' => '01',
+            'نعم / لا' => '10',
+            'لا / لا' => '00',
+        ];
+    }
+}
